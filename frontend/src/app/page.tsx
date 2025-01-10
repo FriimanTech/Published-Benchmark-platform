@@ -1,27 +1,41 @@
 'use client';
 import React, { useState } from 'react';
 import { 
-  LineChart, 
-  Line, 
+  BarChart, 
+  Bar, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
   Legend, 
   ResponsiveContainer,
-  BarChart,
-  Bar
-} from 'recharts';
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts'; // Removed unused imports (LineChart, Line)
 import { AlertCircle, Upload, Activity } from 'lucide-react';
-/*This file holds all the page adjustments*/
+
+// Define the type for BenchmarkResults
+interface BenchmarkResults {
+  accuracy: number;
+  precision: number;
+  recall: number;
+  f1_score: number;
+}
+
 const BenchmarkApp = () => {
-  const [modelFile, setModelFile] = useState(null);
-  const [datasetFile, setDatasetFile] = useState(null);
-  const [results, setResults] = useState(null);
+  const [modelFile, setModelFile] = useState<string | null>(null);
+  const [datasetFile, setDatasetFile] = useState<string | null>(null);
+  const [results, setResults] = useState<BenchmarkResults | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [comment, setComment] = useState('');
 
-  const handleUpload = async (file, type) => {
+  const handleUpload = async (file: File | null, type: 'model' | 'dataset') => {
     if (!file) return;
 
     // Validate file type for dataset
@@ -39,17 +53,21 @@ const BenchmarkApp = () => {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!response.ok) throw new Error(`Failed to upload ${type}`);
-      
+
       const data = await response.json();
       if (type === 'model') {
         setModelFile(data.filename);
       } else {
         setDatasetFile(data.filename);
       }
-    } catch (error) {
-      setError(`Error uploading ${type}: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(`Error uploading ${type}: ${error.message}`);
+      } else {
+        setError(`Error uploading ${type}: Unknown error`);
+      }
       console.error(error);
     }
   };
@@ -63,14 +81,17 @@ const BenchmarkApp = () => {
       const response = await fetch(`http://localhost:8000/benchmark?model_id=${modelFile}&dataset_id=${datasetFile}`, {
         method: 'POST',
       });
-      
+
       if (!response.ok) throw new Error('Benchmark failed');
-      
+
       const data = await response.json();
       setResults(data.metrics);
-    } catch (error) {
-      setError(`Error running benchmark: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(`Error running benchmark: ${error.message}`);
+      }
     }
+    console.error(error);
     setLoading(false);
   };
 
@@ -80,6 +101,19 @@ const BenchmarkApp = () => {
     { name: 'Recall', value: results.recall * 100 },
     { name: 'F1 Score', value: results.f1_score * 100 }
   ] : [];
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'model' | 'dataset') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleUpload(file, type);
+    }
+  };
+
+  const handleCommentSubmit = () => {
+    // Handle comment submission logic here (e.g., save to database)
+    alert('Comment submitted!');
+    setComment('');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -103,7 +137,7 @@ const BenchmarkApp = () => {
                   <h4 className="text-lg font-medium text-blue-800 mb-2">Model File</h4>
                   <input
                     type="file"
-                    onChange={(e) => handleUpload(e.target.files[0], 'model')}
+                    onChange={(e) => handleFileChange(e, 'model')}
                     className="block w-full text-sm text-blue-600
                              file:mr-4 file:py-2 file:px-4
                              file:rounded-lg file:border-0
@@ -120,7 +154,7 @@ const BenchmarkApp = () => {
                   <input
                     type="file"
                     accept=".csv"
-                    onChange={(e) => handleUpload(e.target.files[0], 'dataset')}
+                    onChange={(e) => handleFileChange(e, 'dataset')}
                     className="block w-full text-sm text-blue-600
                              file:mr-4 file:py-2 file:px-4
                              file:rounded-lg file:border-0
@@ -163,6 +197,7 @@ const BenchmarkApp = () => {
             <h3 className="text-xl font-semibold text-blue-900 mb-4">Results</h3>
             {results ? (
               <div className="space-y-6">
+                {/* Bar Chart */}
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={metricsData}>
@@ -180,16 +215,55 @@ const BenchmarkApp = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  {metricsData.map((metric) => (
-                    <div key={metric.name} className="bg-blue-50 p-4 rounded-lg">
-                      <h4 className="text-blue-800 font-medium">{metric.name}</h4>
-                      <p className="text-2xl font-bold text-blue-600">
-                        {metric.value.toFixed(2)}%
-                      </p>
-                    </div>
-                  ))}
+
+                {/* Radar Chart */}
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart data={metricsData}>
+                      <PolarGrid />
+                      <PolarAngleAxis dataKey="name" />
+                      <Radar 
+                        name="Score"
+                        dataKey="value"
+                        stroke="#3b82f6"
+                        fill="#60a5fa"
+                        fillOpacity={0.6}
+                      />
+                      <Tooltip />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Pie Chart */}
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={metricsData} dataKey="value" nameKey="name" fill="#3b82f6" label>
+                        {metricsData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? "#60a5fa" : "#3b82f6"} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Comment Section */}
+                <div className="mt-6">
+                  <h4 className="text-lg font-semibold text-blue-900">Add a Comment</h4>
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="w-full h-32 mt-2 border border-blue-200 rounded-lg p-4 text-blue-700"
+                    placeholder="Your feedback here..."
+                  />
+                  <button
+                    onClick={handleCommentSubmit}
+                    className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  >
+                    Submit Comment
+                  </button>
                 </div>
               </div>
             ) : (
@@ -203,4 +277,8 @@ const BenchmarkApp = () => {
     </div>
   );
 };
+
 export default BenchmarkApp;
+
+
+
