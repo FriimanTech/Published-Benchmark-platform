@@ -1,5 +1,10 @@
+// 'use client' is necessary for Next.js pages to enable client-side rendering for the React component.
 'use client';
+
+// Import React and useState for managing component state.
 import React, { useState } from 'react';
+
+// Import visualization components from 'recharts' library to create charts.
 import { 
   BarChart, 
   Bar, 
@@ -16,85 +21,92 @@ import {
   PieChart,
   Pie,
   Cell
-} from 'recharts'; // Removed unused imports (LineChart, Line)
+} from 'recharts'; // Import only necessary components to optimize code.
+
+// Import icons from 'lucide-react' for UI elements.
 import { AlertCircle, Upload, Activity } from 'lucide-react';
 
-// Define the type for BenchmarkResults
+// Define a TypeScript interface for the structure of benchmark results.
 interface BenchmarkResults {
-  accuracy: number;
-  precision: number;
-  recall: number;
-  f1_score: number;
+  accuracy: number;  // Model accuracy (percentage of correct predictions).
+  precision: number; // Model precision (positive predictive value).
+  recall: number;    // Model recall (sensitivity or true positive rate).
+  f1_score: number;  // Model F1 score (harmonic mean of precision and recall).
 }
 
+// Main component for the Benchmark Application.
 const BenchmarkApp = () => {
-  const [modelFile, setModelFile] = useState<string | null>(null);
-  const [datasetFile, setDatasetFile] = useState<string | null>(null);
-  const [results, setResults] = useState<BenchmarkResults | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [comment, setComment] = useState('');
+  // State variables to manage application data and user interactions.
+  const [modelFile, setModelFile] = useState<string | null>(null); // Stores uploaded model file name.
+  const [datasetFile, setDatasetFile] = useState<string | null>(null); // Stores uploaded dataset file name.
+  const [results, setResults] = useState<BenchmarkResults | null>(null); // Stores benchmark results.
+  const [loading, setLoading] = useState(false); // Tracks whether benchmarking is in progress.
+  const [error, setError] = useState(''); // Stores error messages.
+  const [comment, setComment] = useState(''); // Manages user comments.
 
+  // Handles file uploads and communicates with the backend API.
   const handleUpload = async (file: File | null, type: 'model' | 'dataset') => {
-    if (!file) return;
+    if (!file) return; // Exit if no file is selected.
 
-    // Validate file type for dataset
+    // Ensure dataset files are in CSV format.
     if (type === 'dataset' && !file.name.endsWith('.csv')) {
       setError('Please upload a CSV file for the dataset');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
+    const formData = new FormData(); // Create a FormData object for file upload.
+    formData.append('file', file); // Append the file to the FormData object.
 
     try {
-      setError('');
+      setError(''); // Clear any existing errors.
       const response = await fetch(`http://localhost:8000/upload-${type}`, {
-        method: 'POST',
-        body: formData,
+        method: 'POST', // POST request to backend.
+        body: formData, // Send file data.
       });
 
-      if (!response.ok) throw new Error(`Failed to upload ${type}`);
+      if (!response.ok) throw new Error(`Failed to upload ${type}`); // Handle non-200 responses.
 
-      const data = await response.json();
+      const data = await response.json(); // Parse response JSON.
       if (type === 'model') {
-        setModelFile(data.filename);
+        setModelFile(data.filename); // Store the uploaded model file name.
       } else {
-        setDatasetFile(data.filename);
+        setDatasetFile(data.filename); // Store the uploaded dataset file name.
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
-        setError(`Error uploading ${type}: ${error.message}`);
+        setError(`Error uploading ${type}: ${error.message}`); // Display error message.
       } else {
-        setError(`Error uploading ${type}: Unknown error`);
+        setError(`Error uploading ${type}: Unknown error`); // Handle unexpected errors.
       }
-      console.error(error);
+      console.error(error); // Log error for debugging.
     }
   };
 
+  // Initiates a benchmark request to the backend API.
   const runBenchmark = async () => {
-    if (!modelFile || !datasetFile) return;
+    if (!modelFile || !datasetFile) return; // Ensure files are uploaded.
 
-    setLoading(true);
-    setError('');
+    setLoading(true); // Indicate benchmarking is in progress.
+    setError(''); // Clear any existing errors.
     try {
       const response = await fetch(`http://localhost:8000/benchmark?model_id=${modelFile}&dataset_id=${datasetFile}`, {
-        method: 'POST',
+        method: 'POST', // POST request to backend.
       });
 
-      if (!response.ok) throw new Error('Benchmark failed');
+      if (!response.ok) throw new Error('Benchmark failed'); // Handle non-200 responses.
 
-      const data = await response.json();
-      setResults(data.metrics);
+      const data = await response.json(); // Parse response JSON.
+      setResults(data.metrics); // Store benchmark results.
     } catch (error: unknown) {
       if (error instanceof Error) {
-        setError(`Error running benchmark: ${error.message}`);
+        setError(`Error running benchmark: ${error.message}`); // Display error message.
       }
+      console.error(error); // Log error for debugging.
     }
-    console.error(error);
-    setLoading(false);
+    setLoading(false); // Stop loading indicator.
   };
 
+  // Prepare data for charts based on benchmark results.
   const metricsData = results ? [
     { name: 'Accuracy', value: results.accuracy * 100 },
     { name: 'Precision', value: results.precision * 100 },
@@ -102,20 +114,22 @@ const BenchmarkApp = () => {
     { name: 'F1 Score', value: results.f1_score * 100 }
   ] : [];
 
+  // Handles file input changes and triggers the upload process.
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'model' | 'dataset') => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]; // Get selected file.
     if (file) {
-      handleUpload(file, type);
+      handleUpload(file, type); // Upload file.
     }
   };
 
+  // Handles user comments (e.g., save or process comments).
   const handleCommentSubmit = () => {
-    // Handle comment submission logic here (e.g., save to database)
-    alert('Comment submitted!');
-    setComment('');
+    alert('Comment submitted!'); // Placeholder for comment submission logic.
+    setComment(''); // Reset comment input.
   };
 
   return (
+    // Main container with a gradient background.
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="max-w-6xl mx-auto p-6">
         <div className="text-center mb-8">
@@ -123,16 +137,16 @@ const BenchmarkApp = () => {
           <p className="text-blue-600">Upload your model and dataset to analyze performance metrics</p>
         </div>
 
+        {/* Two-column layout for uploads and results */}
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Upload Section */}
+          {/* File Upload Section */}
           <div className="bg-white rounded-xl shadow-lg p-6 space-y-6">
             <div>
               <h3 className="text-xl font-semibold text-blue-900 flex items-center gap-2">
                 <Upload size={24} /> Upload Files
               </h3>
-              
               <div className="mt-4 space-y-4">
-                {/* Model Upload */}
+                {/* Upload Model */}
                 <div className="border-2 border-dashed border-blue-200 rounded-lg p-4 hover:border-blue-400 transition-colors">
                   <h4 className="text-lg font-medium text-blue-800 mb-2">Model File</h4>
                   <input
@@ -148,7 +162,7 @@ const BenchmarkApp = () => {
                   {modelFile && <p className="text-green-600 mt-2">✓ Model uploaded: {modelFile}</p>}
                 </div>
 
-                {/* Dataset Upload */}
+                {/* Upload Dataset */}
                 <div className="border-2 border-dashed border-blue-200 rounded-lg p-4 hover:border-blue-400 transition-colors">
                   <h4 className="text-lg font-medium text-blue-800 mb-2">Dataset (CSV)</h4>
                   <input
@@ -166,6 +180,7 @@ const BenchmarkApp = () => {
                 </div>
               </div>
 
+              {/* Error Message */}
               {error && (
                 <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
                   <AlertCircle size={20} />
@@ -173,6 +188,7 @@ const BenchmarkApp = () => {
                 </div>
               )}
 
+              {/* Run Benchmark Button */}
               <button
                 onClick={runBenchmark}
                 disabled={!modelFile || !datasetFile || loading}
@@ -278,6 +294,7 @@ const BenchmarkApp = () => {
   );
 };
 
+// Export the component to use it in the application.
 export default BenchmarkApp;
 
 
