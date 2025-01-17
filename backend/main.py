@@ -47,6 +47,9 @@ async def upload_model(file: UploadFile = File(...)):  # The file is uploaded as
     - This is where the front-end will send the model file (e.g., a .pkl file)
     """
     try:
+        # Check if the model file is in pkl format
+        if not file.filename.endswith('.pkl'):
+            raise HTTPException(status_code=400, detail="Model file must be a pkl file")
         # Save the uploaded model file to the 'models' directory
         file_path = f"models/{file.filename}"
         with open(file_path, "wb") as buffer:
