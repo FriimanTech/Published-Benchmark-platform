@@ -4,3 +4,4 @@ node_modules/
 backend/models/
 backend/datasets/
 .vercel
+backend/__pycache__/

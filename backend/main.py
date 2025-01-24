@@ -15,7 +15,7 @@ app = FastAPI(title="ML Benchmark Platform")
 # Configure CORS to allow cross-origin requests from all sources (important for the frontend to communicate with this backend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins (front-end can be on any domain)
+    allow_origins=["https://benchmark-platform-deployment.vercel.app/"],  # Allows all origins (front-end can be on any domain)
     allow_credentials=True,  # Allows sending credentials (cookies, etc.)
     allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all HTTP headers
@@ -128,9 +128,3 @@ async def run_benchmark(model_id: str, dataset_id: str):
     except Exception as e:
         # If there's an error, return a 500 Internal Server Error with the error message
         raise HTTPException(status_code=500, detail=str(e))
-
-# For running the app directly (without Uvicorn server)
-if __name__ == "__main__":
-    import uvicorn  # Uvicorn is an ASGI server to run FastAPI
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
-
