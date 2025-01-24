@@ -8,6 +8,12 @@ import numpy as np  # For numerical operations (though it's not used directly he
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score  # For model evaluation metrics
 import joblib  # To load serialized machine learning models
 import os  # For interacting with the operating system (e.g., file handling)
+import uvicorn
+from dotenv import load_dotenv
+load_dotenv()
+
+#Set the right port
+port = int(os.getenv("PORT", 8000))
 
 # Initialize FastAPI app, this will expose API endpoints
 app = FastAPI(title="ML Benchmark Platform")
@@ -15,7 +21,7 @@ app = FastAPI(title="ML Benchmark Platform")
 # Configure CORS to allow cross-origin requests from all sources (important for the frontend to communicate with this backend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://benchmark-platform-deployment.vercel.app/"],  # Allows all origins (front-end can be on any domain)
+    allow_origins=["*"],  # Allows all origins (front-end can be on any domain)
     allow_credentials=True,  # Allows sending credentials (cookies, etc.)
     allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all HTTP headers
@@ -128,3 +134,7 @@ async def run_benchmark(model_id: str, dataset_id: str):
     except Exception as e:
         # If there's an error, return a 500 Internal Server Error with the error message
         raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
+
