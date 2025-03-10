@@ -8,15 +8,28 @@ healthcheckPath = "/"
 healthcheckTimeout = 100
 restartPolicyType = "on-failure"
 
-[deploy.services.backend]
+[[deploy.services]]
 name = "ml-benchmark-api"
 directory = "backend"
 startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
-envs = { PORT = "8000" }
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+envs = { 
+    PORT = "8000",
+    PYTHON_VERSION = "3.9.0",
+    STORAGE_DIR = "/data",
+    ALLOWED_ORIGINS = "https://ml-benchmark-frontend.up.railway.app"
+}
 
-[deploy.services.frontend]
+[[deploy.services]]
 name = "ml-benchmark-frontend"
 directory = "frontend"
 buildCommand = "npm install && npm run build"
 startCommand = "npm start"
-envs = { PORT = "3000", NODE_ENV = "production" }
+healthcheckPath = "/"
+healthcheckTimeout = 30
+envs = { 
+    PORT = "3000",
+    NODE_ENV = "production",
+    NEXT_PUBLIC_API_URL = "https://ml-benchmark-api.up.railway.app"
+}
