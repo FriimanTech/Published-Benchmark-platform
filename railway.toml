@@ -1,0 +1,22 @@
+[build]
+builder = "nixpacks"
+buildCommand = "echo 'Building both services...'"
+
+[deploy]
+startCommand = "echo 'Starting services...'"
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "on-failure"
+
+[deploy.services.backend]
+name = "ml-benchmark-api"
+directory = "backend"
+startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+envs = { PORT = "8000" }
+
+[deploy.services.frontend]
+name = "ml-benchmark-frontend"
+directory = "frontend"
+buildCommand = "npm install && npm run build"
+startCommand = "npm start"
+envs = { PORT = "3000", NODE_ENV = "production" }
