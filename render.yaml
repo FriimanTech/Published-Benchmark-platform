@@ -1,0 +1,26 @@
+services:
+  # Backend API service
+  - type: web
+    name: ml-benchmark-api
+    runtime: python3.9
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: PYTHON_VERSION
+        value: 3.9.0
+
+  # Frontend Next.js service
+  - type: web
+    name: ml-benchmark-frontend
+    runtime: node
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://ml-benchmark-api.onrender.com
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
