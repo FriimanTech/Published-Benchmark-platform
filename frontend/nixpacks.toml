@@ -1,11 +1,9 @@
 [phases.setup]
-nixPkgs = ["nodejs", "npm"]
+nixPkgs = ["nodejs_18", "npm"]
 
 [phases.install]
-cmds = ["rm -f package-lock.json", "npm install"]
-
-[phases.build]
-cmds = ["npm run build"]
+cmds = ["chmod +x build.sh", "./build.sh"]
+dependsOn = ["setup"]
 
 [start]
-cmd = "npm start"
+cmd = "chmod +x start.sh && ./start.sh"
